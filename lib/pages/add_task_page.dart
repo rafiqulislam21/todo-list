@@ -1,23 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_to_do_list/model/database.dart';
-import 'package:flutter_to_do_list/model/todo.dart';
-import 'package:flutter_to_do_list/widgets/custom_button.dart';
-import 'package:flutter_to_do_list/widgets/custom_date_time_picker.dart';
-import 'package:flutter_to_do_list/widgets/custom_modal_action_button.dart';
-import 'package:flutter_to_do_list/widgets/custom_textfield.dart';
+import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
+import 'package:todolist/model/tasks.dart';
+import 'package:todolist/pages/task_page.dart';
+import 'package:todolist/widgets/custom_date_time_picker.dart';
+import 'package:todolist/widgets/custom_modal_action_button.dart';
+import 'package:todolist/widgets/custom_textfield.dart';
 
 class AddTaskPage extends StatefulWidget {
+  final updateTaskData;
+  final updateIndex;
+
+  const AddTaskPage({Key key, this.updateTaskData, this.updateIndex,}) : super(key: key);
   @override
   State<StatefulWidget> createState() {
-    // TODO: implement createState
     return _AddTaskState();
   }
 }
 
 class _AddTaskState extends State<AddTaskPage> {
   DateTime _selectedDate = DateTime.now();
-  final _textTaskController = TextEditingController();
+  TextEditingController _textTaskController;
+  Box<Map> taskBox;
 
   Future _pickDate() async {
     DateTime datepick = await showDatePicker(
@@ -31,10 +35,26 @@ class _AddTaskState extends State<AddTaskPage> {
       });
   }
 
+  @override
+  void initState() {
+    super.initState();
+    _textTaskController = TextEditingController(text: widget.updateTaskData != null ? widget.updateTaskData['taskName'] : "");
+    _textTaskController.addListener(() {
+      _textTaskController.text;
+    });
+    taskBox = Hive.box<Map>("taskBox");
+
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _textTaskController.dispose();
+  }
+
 
   @override
   Widget build(BuildContext context) {
-    _textTaskController.clear();
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
@@ -42,7 +62,7 @@ class _AddTaskState extends State<AddTaskPage> {
         children: <Widget>[
           Center(
             child: Text(
-              "Add new task",
+              widget.updateIndex == null ? "Add new task" : "Update task",
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ),
@@ -84,22 +104,24 @@ class _AddTaskState extends State<AddTaskPage> {
               if ( _textTaskController.text == ""){
                 print("data not found");
               }else{
-                Database().insertTodoEntries(new TodoData(
-                    id: null,
-                    date: _selectedDate,
-                    time: DateTime.now(),
-                    task: _textTaskController.text,
-                    description: "N/A",
-                    isFinish: false,
-                    todoType: TodoType.TYPE_TASK.index)).whenComplete(() => Navigator.of(context).pop());
+//                taskBox.put(1,_textTaskController.text);
+              widget.updateIndex != null ? taskBox.put(widget.updateIndex, {
+                'taskName': _textTaskController.text,
+                'taskDate': _selectedDate,
+                'lastUpdatedDate': DateTime.now(),
+                'isComplete': false
+              }) : taskBox.add({
+                'taskName': _textTaskController.text,
+                'taskDate': _selectedDate,
+                'lastUpdatedDate': DateTime.now(),
+                'isComplete': false
+              });
+                Navigator.pop(context);
               }
             },
           ),
-
-
         ],
       ),
     );
   }
-
 }

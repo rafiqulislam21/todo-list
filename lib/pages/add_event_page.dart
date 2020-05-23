@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_to_do_list/widgets/custom_button.dart';
-import 'package:flutter_to_do_list/widgets/custom_date_time_picker.dart';
-import 'package:flutter_to_do_list/widgets/custom_modal_action_button.dart';
-import 'package:flutter_to_do_list/widgets/custom_textfield.dart';
+import 'package:hive/hive.dart';
+import 'package:todolist/widgets/custom_date_time_picker.dart';
+import 'package:todolist/widgets/custom_modal_action_button.dart';
+import 'package:todolist/widgets/custom_textfield.dart';
 
 class AddEventPage extends StatefulWidget {
   @override
@@ -15,6 +15,32 @@ class AddEventPage extends StatefulWidget {
 class _AddEventPage extends State<AddEventPage> {
   String _selectedDate = 'Pick date';
   String _selectedTime = 'Pick time';
+
+  TextEditingController eventNameController;
+  TextEditingController eventDetailsController;
+
+  Box<Map> eventBox;
+
+  @override
+  void initState() {
+    super.initState();
+    eventNameController = TextEditingController();
+    eventDetailsController = TextEditingController();
+    eventNameController.addListener(() {
+      eventNameController.text;
+    });
+    eventDetailsController.addListener(() {
+      eventDetailsController.text;
+    });
+    eventBox = Hive.box<Map>("eventBox");
+  }
+  @override
+  void dispose() {
+    eventNameController.dispose();
+    eventDetailsController.dispose();
+    super.dispose();
+  }
+
 
   Future _pickDate() async {
     DateTime datepick = await showDatePicker(
@@ -34,59 +60,73 @@ class _AddEventPage extends State<AddEventPage> {
 
     if (timepick != null)
       setState(() {
-        _selectedTime = timepick.toString();
+        _selectedTime = timepick.format(context).toString();
       });
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          Center(
-            child: Text(
-              "Add new task",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+      padding: const EdgeInsets.all(20.0),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Center(
+              child: Text(
+                "Add new event",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
             ),
-          ),
-          SizedBox(
-            height: 24,
-          ),
-          CustomTextfield(
-            labelText: 'Enter event name',
-          ),
-          SizedBox(
-            height: 24,
-          ),
-          CustomTextfield(
-            labelText: 'Enter Description',
-          ),
-          SizedBox(
-            height: 24,
-          ),
-          CustomDateTimePicker(
-            icon: Icons.date_range,
-            onPressed: _pickDate,
-            value: _selectedDate,
-          ),
-          CustomDateTimePicker(
-            icon: Icons.access_time,
-            onPressed: _pickTime,
-            value: _selectedTime,
-          ),
+            SizedBox(
+              height: 24,
+            ),
+            CustomTextfield(
+              labelText: 'Enter event name',
+              controller: eventNameController,
+            ),
+            SizedBox(
+              height: 24,
+            ),
+            CustomTextfield(
+              labelText: 'Enter Description',
+              controller: eventDetailsController,
+            ),
+            SizedBox(
+              height: 15,
+            ),
+            CustomDateTimePicker(
+              icon: Icons.date_range,
+              onPressed: _pickDate,
+              value: _selectedDate,
+            ),
+            CustomDateTimePicker(
+              icon: Icons.access_time,
+              onPressed: _pickTime,
+              value: _selectedTime,
+            ),
 
-          SizedBox(
-            height: 24,
-          ),
-          CustomModalActionButton(
-            onClose: () {
-              Navigator.of(context).pop();
-            },
-            onSave: () {},
-          ),
-        ],
+            SizedBox(
+              height: 24,
+            ),
+            CustomModalActionButton(
+              onClose: () {
+                Navigator.of(context).pop();
+              },
+              onSave: () {
+                eventBox.add({
+                  'eventName': eventNameController.text,
+                  'eventDetails': eventDetailsController.text,
+                  'eventDate': _selectedDate,
+                  'eventTime': _selectedTime,
+                  'lastUpdatedDate': DateTime.now(),
+                  'isComplete': false
+                });
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

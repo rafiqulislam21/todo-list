@@ -1,6 +1,6 @@
-# flutter_to_do_list
+# todolist
 
-A new Flutter To-do list application.
+My todo list using flutter
 
 ## Getting Started
 

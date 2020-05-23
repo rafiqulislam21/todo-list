@@ -1,12 +1,25 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_to_do_list/pages/add_event_page.dart';
-import 'package:flutter_to_do_list/pages/add_task_page.dart';
-import 'package:flutter_to_do_list/pages/event_page.dart';
-import 'package:flutter_to_do_list/widgets/custom_button.dart';
-
+import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'pages/add_event_page.dart';
+import 'pages/add_task_page.dart';
+import 'pages/event_page.dart';
 import 'pages/task_page.dart';
+import 'widgets/custom_button.dart';
 
-void main() => runApp(MyApp());
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  Directory document = await getApplicationDocumentsDirectory();
+  Hive.init(document.path);
+  await Hive.openBox<Map>("taskBox");
+  await Hive.openBox<Map>("eventBox");
+
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   // This widget is the root of your application.
@@ -16,7 +29,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Flutter Demo',
       theme: ThemeData(
-        primarySwatch: Colors.red,
+        primarySwatch: Colors.green,
         fontFamily: 'MontserratAlternates',
       ),
       home: MyHomePage(),
@@ -30,9 +43,22 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  PageController _pageController = PageController();
+  PageController _pageController;
+  DateTime today = DateTime.now();
 
   double currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +77,7 @@ class _MyHomePageState extends State<MyHomePage> {
           Positioned(
             right: 0,
             child: Text(
-              '6',
+              '${DateFormat.d().format(today)}',
               style: TextStyle(fontSize: 200, color: Color(0x10000000)),
             ),
           ),
@@ -63,7 +89,7 @@ class _MyHomePageState extends State<MyHomePage> {
           showDialog(
               barrierDismissible: false,
               context: context,
-              builder: (BuildContext contex) {
+              builder: (BuildContext context) {
                 return Dialog(
                   child: currentPage == 1 ? AddEventPage() : AddTaskPage(),
 //                  child: AddEventPagePage(),
@@ -108,7 +134,7 @@ class _MyHomePageState extends State<MyHomePage> {
         Padding(
           padding: const EdgeInsets.all(24.0),
           child: Text(
-            'Monday',
+            '${DateFormat.EEEE().format(today)}',
             style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
           ),
         ),
@@ -118,9 +144,10 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
         Expanded(
             child: PageView(
-          controller: _pageController,
-          children: <Widget>[TaskPage(), EventPage()],
-        ))
+
+              controller: _pageController,
+              children: <Widget>[TaskPage(), EventPage()],
+            ))
       ],
     );
   }
